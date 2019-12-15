@@ -16,8 +16,9 @@ class LambdaPerformanceTuner extends Command {
     region: flags.string({char: 'r', default: 'us-east-1', description: 'AWS region your Lambda function lives in.'}),
     profile: flags.string({char: 'p', default: 'lambdatuner', description: 'Local profile of the AWS user to use.'}),
     list: flags.boolean({char: 'l', description: 'List all available Lambda functions.'}),
-    min: flags.integer({char: 'm', default: 128, description: 'Minimum amount of RAM to test for Lambda function.'}),
-    max: flags.integer({char: 'M', default: 1024, description: 'Maximum amount of RAM to test for Lambda function.'})
+    'min-memory': flags.integer({char: 'm', default: 128, description: 'Minimum amount of memory to test for Lambda function.'}),
+    'max-memory': flags.integer({char: 'M', default: 1024, description: 'Maximum amount of memory to test for Lambda function.'}),
+    'max-price': flags.integer({char: 'P', description: 'Maximum price you\'re willing to spend per 1,000,000 executions/month.'})
   }
 
   lambda: (AWS.Lambda | undefined)
