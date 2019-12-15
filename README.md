@@ -73,7 +73,7 @@ To run execute `./bin/run` or `lambda-tuner` in your command line. To get help e
 
 The current help output with current and planned options.
 
-```bash
+```
 ➜ lambda-tuner -h
 Automatically determines the best cost / performance balance for an AWS Lambda function.
 
