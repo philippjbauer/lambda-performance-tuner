@@ -10,16 +10,31 @@ Automatically determines the best cost / performance balance for an AWS Lambda f
 [![Downloads/week](https://img.shields.io/npm/dw/lambda-performance-tuner.svg)](https://npmjs.org/package/lambda-performance-tuner)
 [![License](https://img.shields.io/npm/l/lambda-performance-tuner.svg)](https://github.com/philippjbauer/lambda-performance-tuner/blob/master/package.json)
 
+# Table of Contents
 <!-- toc -->
+
+- **[Why this tool?](#why-this-tool)**
+- **[Installation and Setup](#installation-and-setup)**
+- **[Usage](#usage)**
+
 # Why this tool?
+<!-- … but why? -->
 
 As per Amazon's **Serverless Architectures with AWS Lambda** whitepaper*, there's a point of diminishing returns when dialing up the memory size of a Lambda function. At a certain point, the time it takes to execute the function does not get faster but the price to run the function goes up. This tool is aimed to automatically determine the optimal Lambda function memory size to run as fast as possible without spending more than necessary for the function execution.
 
 *[Download Whitepaper](https://d1.awsstatic.com/whitepapers/serverless-architectures-with-aws-lambda.pdf), see page 27 and following.
 
 
+# Installation and Setup
+<!-- setup -->
 
-# Setup
+Download or clone the repository into a folder of your choice.
+
+```bash
+git clone https://github.com/philippjbauer/lambda-performance-tuner.git
+```
+
+## Create AWS Account & Policy
 
 Log in to your AWS account and create a new policy with the following configuration, call it **LambdaPerformanceTunerAccess**.
 
@@ -42,7 +57,9 @@ Log in to your AWS account and create a new policy with the following configurat
 }
 ```
 
-Create a user with **Programmatic access** called **LambdaPerformanceTuner** and attach the policy to the user. Take note of both the **access key ID** and **secret access key**.
+Create a user with **Programmatic access** called **LambdaPerformanceTuner** and attach the policy to the user. Take note of both the **access key ID** and **secret access key**, you'll need them in the next step.
+
+## Modify local AWS config
 
 Add a new profile **lambdatuner** (or name of your choosing) to your `~/.aws/credentials` file like in the example below. You can use the `-p "my-profile"` option to switch between profiles.
 
@@ -62,30 +79,17 @@ region=us-east-1
 output=json
 ```
 
+## Global Installation / Use `lambda-tuner`
+
 You can run `npm link` in this directory to install the CLI globally and get access to the CLI command `lamda-tuner`!
 
 # Usage
 <!-- usage -->
 
-To run execute `./bin/run` or `lambda-tuner` in your command line. To get help execute `./bin/run -h` or `lambda-tuner -h`.
+To run execute `./bin/run` or `lambda-tuner` in your command line. 
 
-### Help Output
+## Help
 
-The current help output with current and planned options.
+To access the help screen, execute `./bin/run -h` or `lambda-tuner -h`.
 
-```
-➜ lambda-tuner -h
-Automatically determines the best cost / performance balance for an AWS Lambda function.
-
-USAGE
-  $ lambda-tuner
-
-OPTIONS
-  -M, --max=max          [default: 1024] Maximum amount of RAM to test for Lambda function.
-  -h, --help             show CLI help
-  -l, --list             List all available Lambda functions.
-  -m, --min=min          [default: 128] Minimum amount of RAM to test for Lambda function.
-  -p, --profile=profile  [default: lambdatuner] Local profile of the AWS user to use.
-  -r, --region=region    [default: us-east-1] AWS region your Lambda function lives in.
-  -v, --version          show CLI version
-```
+<img src="assets/help-screen.png" alt="Help Screen">
