@@ -10,7 +10,6 @@ class LambdaPerformanceTuner extends Command {
   static description = 'Automatically determines the best cost / performance balance for an AWS Lambda function.'
 
   static flags = {
-    // add --version flag to show CLI version
     version: flags.version({char: 'v'}),
     help: flags.help({char: 'h'}),
     region: flags.string({char: 'r', default: 'us-east-1', description: 'AWS region your Lambda function lives in.'}),
@@ -88,7 +87,7 @@ class LambdaPerformanceTuner extends Command {
             : func.functionName
           
           const name: string = Chalk`{${this.getMemoryColor(func.memorySize)}.bold ${func.memorySize.toString().padStart(4, ' ')}MB} ${functionName}`
-          const value: string = func.functionName
+          const value: string = func.arn
           
           return {name, value}
         })
@@ -114,22 +113,23 @@ class LambdaPerformanceTuner extends Command {
 
     Cli.action.start(`Retrieving your Lambda functions.`)
     
-    const listFunctionsResponse : AWS.Lambda.ListFunctionsResponse | undefined = 
+    const listFunctionsResponse : (AWS.Lambda.ListFunctionsResponse | undefined) = 
       await this.lambda?.listFunctions().promise()
     
     if (!listFunctionsResponse?.Functions) {
       throw new Error(`Functions undefined in Lambda's ListFunctionsResponse.`);
     }
     
-    functions = listFunctionsResponse.Functions.map((func) => {
-      return {
-        functionName: func.FunctionName,
-        description: func.Description,
-        memorySize: func.MemorySize,
-        runtime: func.Runtime,
-        state: func.State || 'Unknown'
-      } as LambdaFunctionInformation
-    })
+    functions = listFunctionsResponse.Functions
+      .map((func: AWS.Lambda.FunctionConfiguration): LambdaFunctionInformation => {
+        return {
+          functionName: func.FunctionName,
+          description: func.Description,
+          memorySize: func.MemorySize,
+          runtime: func.Runtime,
+          state: func.State || 'Unknown'
+        } as LambdaFunctionInformation
+      })
     
     if (functions.length === 0) {
       throw new Error(`No AWS Lambda functions found in this region.`)
@@ -200,6 +200,7 @@ class LambdaPerformanceTuner extends Command {
 }
 
 interface LambdaFunctionInformation {
+  arn: string
   functionName: string
   description?: string
   memorySize: number
