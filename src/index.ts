@@ -123,6 +123,7 @@ class LambdaPerformanceTuner extends Command {
     functions = listFunctionsResponse.Functions
       .map((func: AWS.Lambda.FunctionConfiguration): LambdaFunctionInformation => {
         return {
+          arn: func.FunctionArn,
           functionName: func.FunctionName,
           description: func.Description,
           memorySize: func.MemorySize,
