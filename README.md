@@ -1,6 +1,8 @@
 lambda-performance-tuner
 ========================
 
+**[ ! ] This project is still very much WIP! Tuning functionality not yet available.**
+
 Automatically determines the best cost / performance balance for an AWS Lambda function.
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
@@ -66,3 +68,24 @@ You can run `npm link` in this directory to install the CLI globally and get acc
 <!-- usage -->
 
 To run execute `./bin/run` or `lambda-tuner` in your command line. To get help execute `./bin/run -h` or `lambda-tuner -h`.
+
+### Help Output
+
+The current help output with current and planned options.
+
+```bash
+➜ lambda-tuner -h
+Automatically determines the best cost / performance balance for an AWS Lambda function.
+
+USAGE
+  $ lambda-tuner
+
+OPTIONS
+  -M, --max=max          [default: 1024] Maximum amount of RAM to test for Lambda function.
+  -h, --help             show CLI help
+  -l, --list             List all available Lambda functions.
+  -m, --min=min          [default: 128] Minimum amount of RAM to test for Lambda function.
+  -p, --profile=profile  [default: lambdatuner] Local profile of the AWS user to use.
+  -r, --region=region    [default: us-east-1] AWS region your Lambda function lives in.
+  -v, --version          show CLI version
+```
