@@ -77,6 +77,7 @@ class LambdaPerformanceTuner extends Command {
   async runTuner(): Promise<void> {
     const functions: LambdaFunctionInformation[] = await this.listFunctions()
 
+    Cli.log(`\n`)
     const answers: Answers = await Inquirer.prompt({
         type: 'checkbox',
         name: 'functions',
@@ -183,15 +184,16 @@ class LambdaPerformanceTuner extends Command {
   }): never {
     const name = input instanceof Error ? input.name : 'Error'
     const message = input instanceof Error ? input.message : input
+    const code = options?.code ? ` {bgRed.white ${options.code}}` : ''
 
-    Cli.log(Chalk`{red.bold ${name}${options?.code ? ` {bgRed.white ${options.code}}` : ''}:} {red ${message}}`)
+    Cli.log(Chalk`{red.bold ${name}${code}:} {red ${message}}`)
     Cli.exit(options?.exit);
   };
 
   getMemoryColor(size: number): string {
-    return size > 1024
+    return size > 2048
       ? 'red'
-      : size > 512
+      : size > 1024
         ? 'yellow'
         : 'green'
   }
