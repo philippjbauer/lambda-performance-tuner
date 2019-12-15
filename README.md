@@ -9,6 +9,14 @@ Automatically determines the best cost / performance balance for an AWS Lambda f
 [![License](https://img.shields.io/npm/l/lambda-performance-tuner.svg)](https://github.com/philippjbauer/lambda-performance-tuner/blob/master/package.json)
 
 <!-- toc -->
+# Why this tool?
+
+As per Amazon's **Serverless Architectures with AWS Lambda** whitepaper*, there's a point of diminishing returns when dialing up the memory size of a Lambda function. At a certain point, the time it takes to execute the function does not get faster but the price to run the function goes up. This tool is aimed to automatically determine the optimal Lambda function memory size to run as fast as possible without spending more than necessary for the function execution.
+
+*[Download Whitepaper](https://d1.awsstatic.com/whitepapers/serverless-architectures-with-aws-lambda.pdf), see page 27 and following.
+
+
+
 # Setup
 
 Log in to your AWS account and create a new policy with the following configuration, call it **LambdaPerformanceTunerAccess**.
