@@ -15,8 +15,8 @@ class LambdaPerformanceTuner extends Command {
     region: flags.string({char: 'r', default: 'us-east-1', description: 'AWS region your Lambda function lives in.'}),
     profile: flags.string({char: 'p', default: 'lambdatuner', description: 'Local profile of the AWS user to use.'}),
     list: flags.boolean({char: 'l', description: 'List all available Lambda functions.'}),
-    'min-memory': flags.integer({char: 'm', default: 128, description: 'Minimum amount of memory to test for Lambda function.'}),
-    'max-memory': flags.integer({char: 'M', default: 1024, description: 'Maximum amount of memory to test for Lambda function.'}),
+    'min-memory': flags.integer({char: 'm', default: 128, description: Chalk`Minimum memorySize to test for Lambda function. {bold (Minimum: 128)}`}),
+    'max-memory': flags.integer({char: 'M', default: 2084, description: Chalk`Maximum memorySize to test for Lambda function. {bold (Maximum: 3008)}`}),
     'max-price': flags.integer({char: 'P', description: 'Maximum price you\'re willing to spend per 1,000,000 executions/month.'})
   }
 
@@ -50,15 +50,16 @@ class LambdaPerformanceTuner extends Command {
    * @memberof LambdaPerformanceTuner
    */
   async runList(): Promise<void> {
-    const functions: LambdaFunctionInformation[] = await this.listFunctions()
+    const functions: FunctionInformation[] = await this.listFunctions()
 
     Cli.log(`\n`)
     Cli.table(functions, {
-      functionName: {header: 'Name'},
       memorySize: {
         header: 'Memory',
-        get: (row) => Chalk`{${this.getMemoryColor(row.memorySize)}.bold ${row.memorySize}MB}`
+        get: (row) => Chalk`{${this.getMemoryColor(row.memorySize)}.bold ${row.memorySize.toString().padStart(4, ' ')}MB}`
       },
+      functionName: {header: 'Name'},
+      functionArn: {header: 'ARN'},
       state: {header: 'State'}
     })
   }
@@ -74,28 +75,106 @@ class LambdaPerformanceTuner extends Command {
    * @memberof LambdaPerformanceTuner
    */
   async runTuner(): Promise<void> {
-    const functions: LambdaFunctionInformation[] = await this.listFunctions()
+    const functions: FunctionInformation[] = await this.listFunctions()
 
-    Cli.log(`\n`)
-    const answers: Answers = await Inquirer.prompt({
-        type: 'checkbox',
-        name: 'functions',
-        message: 'Please select a Lambda to tune:',
-        choices: functions.map((func: LambdaFunctionInformation) => {
-          const functionName: string = func.functionName.length > 80
-            ? `${func.functionName.substr(0, 79)}…`
-            : func.functionName
-          
-          const name: string = Chalk`{${this.getMemoryColor(func.memorySize)}.bold ${func.memorySize.toString().padStart(4, ' ')}MB} ${functionName}`
-          const value: string = func.arn
-          
-          return {name, value}
-        })
+    // Ask user to select functions
+    Cli.flush()
+    const functionSelection: Answers = await this.promptFunctionSelection(functions);
+    // console.log(functionSelection)
+    
+    // Ask user for event test data for each function
+    const functionEvents: FunctionEvent[] = []
+    for (const func of functionSelection.functions) {
+      const event: FunctionEvent = await this.promptFunctionEvent(func)
+      functionEvents.push(event)
+    }
+    console.log(functionEvents)
+
+    // Create tuning algorithm and process all selected functions ...
+    
+    // Ask for an event input for each selected Lambda function
+    // Then run the following instructions asynchroneously for each function
+      // Do measurement: Invoke the function 10 times, save the execution IDs, we need them for CloudWatch Logs
+      // Retrieve CloudWatch Logs and parse execution time, price and max memory used
+      // Adjust memory size one size (64MB) upwards.
+      // Do measurement again, repeat if faster / cheaper, return to previous if faster / more expensive
+  }
+
+  async promptFunctionSelection(functions: FunctionInformation[]): Promise<Answers> {
+    return Inquirer.prompt({
+      type: 'checkbox',
+      name: 'functions',
+      message: 'Please select a Lambda to tune:',
+      choices: functions.map((func: FunctionInformation) => {
+        const functionName: string = func.functionName.length > 80
+          ? `${func.functionName.substr(0, 79)}…`
+          : func.functionName
+        
+        const name: string = Chalk`{${this.getMemoryColor(func.memorySize)}.bold ${func.memorySize.toString().padStart(4, ' ')}MB} ${functionName}`
+        const value: FunctionInformation = func;
+        
+        return {name, value}
       })
+    })
+  }
+
+  async promptFunctionEvent(func: FunctionInformation): Promise<FunctionEvent> {
+    const eventSource: string = await this.promptFunctionEventSource()
+
+    let eventData: {} = {};
     
-    console.log(answers)
-    
-    // Create tuning algorithm and process all selected functions
+    if (eventSource === 'input') {
+      eventData = await this.promptFunctionEventFile(func)
+    } else {
+      eventData = await this.promptFunctionEventEditor(func)
+    }
+
+    return {
+      functionArn: func.functionArn,
+      data: eventData
+    } as FunctionEvent
+  }
+
+  async promptFunctionEventSource(): Promise<string> {
+    const eventSourceSelection: Answers = await Inquirer.prompt({
+      type: 'list',
+      name: 'eventSource',
+      message: 'Do you want to load a file or open your default editor for a one-off event input?',
+      choices: [
+        {name: 'Load a file', value: 'input'},
+        {name: 'Open default editor', value: 'editor'}
+      ],
+      default: 0
+    })
+
+    return eventSourceSelection.eventSource
+  }
+
+  async promptFunctionEventFile(func: FunctionInformation): Promise<any> {
+    const input: Answers = await Inquirer.prompt({
+      type: 'input',
+      name: 'path',
+      message: `Please select a JSON file for ${func.functionName}`
+    })
+
+    // Load from path
+
+    return {"key1": "value"}
+  }
+
+  async promptFunctionEventEditor(func: FunctionInformation): Promise<any> {
+    const input: Answers = await Inquirer.prompt({
+      type: 'editor',
+      name: 'json',
+      message: `Please enter a valid JSON string for ${func.functionName}`
+    })
+
+    try {
+      const json = JSON.parse(input.json)
+      return json
+    } catch (error) {
+      this.customError(error)
+    }
   }
 
   /**
@@ -105,11 +184,11 @@ class LambdaPerformanceTuner extends Command {
    * Lambda functions and returns their relevant information
    * we use to display to the user in the CLI.
    *
-   * @returns {Promise<LambdaFunctionInformation[]>}
+   * @returns {Promise<FunctionInformation[]>}
    * @memberof LambdaPerformanceTuner
    */
-  async listFunctions(): Promise<LambdaFunctionInformation[]> {
-    let functions: LambdaFunctionInformation[] = []
+  async listFunctions(): Promise<FunctionInformation[]> {
+    let functions: FunctionInformation[] = []
 
     Cli.action.start(`Retrieving your Lambda functions.`)
     
@@ -121,15 +200,15 @@ class LambdaPerformanceTuner extends Command {
     }
     
     functions = listFunctionsResponse.Functions
-      .map((func: AWS.Lambda.FunctionConfiguration): LambdaFunctionInformation => {
+      .map((func: AWS.Lambda.FunctionConfiguration): FunctionInformation => {
         return {
-          arn: func.FunctionArn,
+          functionArn: func.FunctionArn,
           functionName: func.FunctionName,
           description: func.Description,
           memorySize: func.MemorySize,
           runtime: func.Runtime,
           state: func.State || 'Unknown'
-        } as LambdaFunctionInformation
+        } as FunctionInformation
       })
     
     if (functions.length === 0) {
@@ -191,6 +270,13 @@ class LambdaPerformanceTuner extends Command {
     Cli.exit(options?.exit);
   };
 
+  /**
+   * Get a Chalk color for memory size
+   *
+   * @param {number} size
+   * @returns {string}
+   * @memberof LambdaPerformanceTuner
+   */
   getMemoryColor(size: number): string {
     return size > 2048
       ? 'red'
@@ -200,8 +286,8 @@ class LambdaPerformanceTuner extends Command {
   }
 }
 
-interface LambdaFunctionInformation {
-  arn: string
+interface FunctionInformation {
+  functionArn: string
   functionName: string
   description?: string
   memorySize: number
@@ -209,8 +295,9 @@ interface LambdaFunctionInformation {
   state: string
 }
 
-interface LambdaFunctionSettings {
-  memorySize: number
+interface FunctionEvent {
+  functionArn: string
+  data?: {}
 }
 
 export = LambdaPerformanceTuner
