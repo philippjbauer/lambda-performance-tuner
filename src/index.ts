@@ -12,7 +12,7 @@ class LambdaPerformanceTuner extends Command {
   static flags = {
     version: flags.version({char: 'v'}),
     help: flags.help({char: 'h'}),
-    region: flags.string({char: 'r', default: 'us-east-1', description: 'AWS region your Lambda function lives in.'}),
+    region: flags.string({char: 'r', description: 'AWS region your Lambda function lives in.'}),
     profile: flags.string({char: 'p', default: 'lambdatuner', description: 'Local profile of the AWS user to use.'}),
     list: flags.boolean({char: 'l', description: 'List all available Lambda functions.'}),
     'min-memory': flags.integer({char: 'm', default: 128, description: Chalk`Minimum memorySize to test for Lambda function. {bold (Minimum: 128)}`}),
@@ -225,11 +225,11 @@ class LambdaPerformanceTuner extends Command {
    * 
    * Create the necessary environment for the CLI to run.
    *
-   * @param {string} [profile='lambdatuner']
-   * @param {string} [region='us-east-1']
+   * @param {string} profile
+   * @param {string} region
    * @memberof LambdaPerformanceTuner
    */
-  awsSetup(profile: string = 'lambdatuner', region: string = 'us-east-1'): void {
+  awsSetup(profile: string, region: (string | undefined)): void {
     const credentials = iniLoader.loadFrom({})
     const config = iniLoader.loadFrom({isConfig: true})
     const ini = Object.assign({}, credentials[profile], config[profile]);
@@ -239,7 +239,7 @@ class LambdaPerformanceTuner extends Command {
       apiVersion: '2015-03-31',
       accessKeyId: ini.aws_access_key_id,
       secretAccessKey: ini.aws_secret_access_key,
-      region: ini.region
+      region: region || ini.region
     })
     
     Cli.log(Chalk`Using AWS Region: {green.bold ${this.lambda.config.region}}`)
