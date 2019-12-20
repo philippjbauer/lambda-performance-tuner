@@ -1,8 +1,8 @@
-import { Command, flags } from '@oclif/command'
+import {Command, flags} from '@oclif/command'
 import * as AWS from 'aws-sdk'
 import Cli from 'cli-ux'
 import Chalk from 'chalk'
-import Inquirer, { Answers } from 'inquirer'
+import Inquirer, {Answers} from 'inquirer'
 
 const iniLoader: AWS.IniLoader = new AWS.IniLoader()
 
@@ -52,11 +52,11 @@ class LambdaPerformanceTuner extends Command {
   async runList(): Promise<void> {
     const functions: FunctionInformation[] = await this.listFunctions()
 
-    Cli.log(`\n`)
+    Cli.log('\n')
     Cli.table(functions, {
       memorySize: {
         header: 'Memory',
-        get: (row) => Chalk`{${this.getMemoryColor(row.memorySize)}.bold ${row.memorySize.toString().padStart(4, ' ')}MB}`
+        get: row => Chalk`{${this.getMemoryColor(row.memorySize)}.bold ${row.memorySize.toString().padStart(4, ' ')}MB}`,
       },
       functionName: {header: 'Name'},
       functionArn: {header: 'ARN'},
@@ -80,24 +80,23 @@ class LambdaPerformanceTuner extends Command {
     // Ask user to select functions
     Cli.flush()
     const functionSelection: Answers = await this.promptFunctionSelection(functions);
-    // console.log(functionSelection)
-    
+
     // Ask user for event test data for each function
-    const functionEvents: FunctionEvent[] = []
-    for (const func of functionSelection.functions) {
-      const event: FunctionEvent = await this.promptFunctionEvent(func)
-      functionEvents.push(event)
-    }
+    const functionEvents: FunctionEvent[] = await Promise.all(
+      functionSelection.functions.map(
+        (func: FunctionInformation): Promise<FunctionEvent> => this.promptFunctionEvent(func)
+      )
+    )
     console.log(functionEvents)
 
     // Create tuning algorithm and process all selected functions ...
-    
+
     // Ask for an event input for each selected Lambda function
     // Then run the following instructions asynchroneously for each function
-      // Do measurement: Invoke the function 10 times, save the execution IDs, we need them for CloudWatch Logs
-      // Retrieve CloudWatch Logs and parse execution time, price and max memory used
-      // Adjust memory size one size (64MB) upwards.
-      // Do measurement again, repeat if faster / cheaper, return to previous if faster / more expensive
+    // Do measurement: Invoke the function 10 times, save the execution IDs, we need them for CloudWatch Logs
+    // Retrieve CloudWatch Logs and parse execution time, price and max memory used
+    // Adjust memory size one size (64MB) upwards.
+    // Do measurement again, repeat if faster / cheaper, return to previous if faster / more expensive
   }
 
   async promptFunctionSelection(functions: FunctionInformation[]): Promise<Answers> {
@@ -106,23 +105,23 @@ class LambdaPerformanceTuner extends Command {
       name: 'functions',
       message: 'Please select a Lambda to tune:',
       choices: functions.map((func: FunctionInformation) => {
-        const functionName: string = func.functionName.length > 80
-          ? `${func.functionName.substr(0, 79)}…`
-          : func.functionName
-        
+        const functionName: string = func.functionName.length > 80 ?
+          `${func.functionName.substr(0, 79)}…` :
+          func.functionName
+
         const name: string = Chalk`{${this.getMemoryColor(func.memorySize)}.bold ${func.memorySize.toString().padStart(4, ' ')}MB} ${functionName}`
-        const value: FunctionInformation = func;
-        
+        const value: FunctionInformation = func
+
         return {name, value}
-      })
+      }),
     })
   }
 
   async promptFunctionEvent(func: FunctionInformation): Promise<FunctionEvent> {
     const eventSource: string = await this.promptFunctionEventSource()
 
-    let eventData: {} = {};
-    
+    let eventData: {} = {}
+
     if (eventSource === 'input') {
       eventData = await this.promptFunctionEventFile(func)
     } else {
@@ -131,7 +130,7 @@ class LambdaPerformanceTuner extends Command {
 
     return {
       functionArn: func.functionArn,
-      data: eventData
+      data: eventData,
     } as FunctionEvent
   }
 
@@ -144,7 +143,7 @@ class LambdaPerformanceTuner extends Command {
         {name: 'Load a file', value: 'input'},
         {name: 'Open default editor', value: 'editor'}
       ],
-      default: 0
+      default: 0,
     })
 
     return eventSourceSelection.eventSource
@@ -190,29 +189,30 @@ class LambdaPerformanceTuner extends Command {
   async listFunctions(): Promise<FunctionInformation[]> {
     let functions: FunctionInformation[] = []
 
-    Cli.action.start(`Retrieving your Lambda functions.`)
-    
-    const listFunctionsResponse : (AWS.Lambda.ListFunctionsResponse | undefined) = 
+    Cli.action.start('Retrieving your Lambda functions.')
+
+    const listFunctionsResponse: (AWS.Lambda.ListFunctionsResponse | undefined) =
       await this.lambda?.listFunctions().promise()
-    
+
     if (!listFunctionsResponse?.Functions) {
-      throw new Error(`Functions undefined in Lambda's ListFunctionsResponse.`);
+      throw new Error('Functions undefined in Lambda\'s ListFunctionsResponse.')
     }
-    
-    functions = listFunctionsResponse.Functions
-      .map((func: AWS.Lambda.FunctionConfiguration): FunctionInformation => {
+
+    functions = listFunctionsResponse.Functions.map(
+      (func: AWS.Lambda.FunctionConfiguration): FunctionInformation => {
         return {
           functionArn: func.FunctionArn,
           functionName: func.FunctionName,
           description: func.Description,
           memorySize: func.MemorySize,
           runtime: func.Runtime,
-          state: func.State || 'Unknown'
+          state: func.State || 'Unknown',
         } as FunctionInformation
-      })
-    
+      }
+    )
+
     if (functions.length === 0) {
-      throw new Error(`No AWS Lambda functions found in this region.`)
+      throw new Error('No AWS Lambda functions found in this region.')
     }
 
     Cli.action.stop(Chalk`{green.bold ${functions.length} function(s) found. }`)
@@ -222,7 +222,7 @@ class LambdaPerformanceTuner extends Command {
 
   /**
    * AWS Setup
-   * 
+   *
    * Create the necessary environment for the CLI to run.
    *
    * @param {string} profile
@@ -239,9 +239,9 @@ class LambdaPerformanceTuner extends Command {
       apiVersion: '2015-03-31',
       accessKeyId: ini.aws_access_key_id,
       secretAccessKey: ini.aws_secret_access_key,
-      region: region || ini.region
+      region: region || ini.region,
     })
-    
+
     Cli.log(Chalk`Using AWS Region: {green.bold ${this.lambda.config.region}}`)
   }
 
@@ -268,7 +268,7 @@ class LambdaPerformanceTuner extends Command {
 
     Cli.log(Chalk`{red.bold ${name}${code}:} {red ${message}}`)
     Cli.exit(options?.exit);
-  };
+  }
 
   /**
    * Get a Chalk color for memory size
@@ -278,26 +278,26 @@ class LambdaPerformanceTuner extends Command {
    * @memberof LambdaPerformanceTuner
    */
   getMemoryColor(size: number): string {
-    return size > 2048
-      ? 'red'
-      : size > 1024
-        ? 'yellow'
-        : 'green'
+    return size > 2048 ?
+      'red' :
+      size > 1024 ?
+        'yellow' :
+        'green'
   }
 }
 
 interface FunctionInformation {
-  functionArn: string
-  functionName: string
-  description?: string
-  memorySize: number
-  runtime: string
-  state: string
+  functionArn: string;
+  functionName: string;
+  description?: string;
+  memorySize: number;
+  runtime: string;
+  state: string;
 }
 
 interface FunctionEvent {
-  functionArn: string
-  data?: {}
+  functionArn: string;
+  data?: {};
 }
 
 export = LambdaPerformanceTuner
