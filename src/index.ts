@@ -46,7 +46,7 @@ class LambdaPerformanceTuner extends Command {
    * Retrieves the Lambda functions of the set region
    * and displays them in the CLI.
    *
-   * @returns {Promise<void>}
+   * @returns {Promise<void>} Void
    * @memberof LambdaPerformanceTuner
    */
   async runList(): Promise<void> {
@@ -71,7 +71,7 @@ class LambdaPerformanceTuner extends Command {
    * the selected functions with the help tuning of our
    * tuning algorithm.
    *
-   * @returns {Promise<void>}
+   * @returns {Promise<void>} Void
    * @memberof LambdaPerformanceTuner
    */
   async runTuner(): Promise<void> {
@@ -183,7 +183,7 @@ class LambdaPerformanceTuner extends Command {
    * Lambda functions and returns their relevant information
    * we use to display to the user in the CLI.
    *
-   * @returns {Promise<FunctionInformation[]>}
+   * @returns {Promise<FunctionInformation[]>} Function Array
    * @memberof LambdaPerformanceTuner
    */
   async listFunctions(): Promise<FunctionInformation[]> {
@@ -225,8 +225,8 @@ class LambdaPerformanceTuner extends Command {
    *
    * Create the necessary environment for the CLI to run.
    *
-   * @param {string} profile
-   * @param {string} region
+   * @param {string} profile AWS Profile
+   * @param {string} region AWS Region
    * @memberof LambdaPerformanceTuner
    */
   awsSetup(profile: string, region: (string | undefined)): void {
@@ -250,8 +250,8 @@ class LambdaPerformanceTuner extends Command {
    *
    * Display a nicer error than the default oclif error at `this.error`.
    *
-   * @param {(string | Error)} input
-   * @param {{}} [options]
+   * @param {(string | Error)} input Error message
+   * @param {{}} [options] Options
    * @memberof LambdaPerformanceTuner
    */
   customError(input: string | Error, options?: {
@@ -270,7 +270,7 @@ class LambdaPerformanceTuner extends Command {
    * Get a Chalk color for memory size
    *
    * @param {number} size Lambda memorySize
-   * @returns {string}
+   * @returns {string} Color to display memorySize in
    * @memberof LambdaPerformanceTuner
    */
   getMemoryColor(size: number): string {
