@@ -17,7 +17,7 @@ class LambdaPerformanceTuner extends Command {
     list: flags.boolean({char: 'l', description: 'List all available Lambda functions.'}),
     'min-memory': flags.integer({char: 'm', default: 128, description: Chalk`Minimum memorySize to test for Lambda function. {bold (Minimum: 128)}`}),
     'max-memory': flags.integer({char: 'M', default: 2084, description: Chalk`Maximum memorySize to test for Lambda function. {bold (Maximum: 3008)}`}),
-    'max-price': flags.integer({char: 'P', description: 'Maximum price you\'re willing to spend per 1,000,000 executions/month.'})
+    'max-price': flags.integer({char: 'P', description: 'Maximum price you\'re willing to spend per 1,000,000 executions/month.'}),
   }
 
   lambda: (AWS.Lambda | undefined)
@@ -42,10 +42,10 @@ class LambdaPerformanceTuner extends Command {
 
   /**
    * Run List CLI Option
-   * 
+   *
    * Retrieves the Lambda functions of the set region
    * and displays them in the CLI.
-   * 
+   *
    * @returns {Promise<void>}
    * @memberof LambdaPerformanceTuner
    */
@@ -60,13 +60,13 @@ class LambdaPerformanceTuner extends Command {
       },
       functionName: {header: 'Name'},
       functionArn: {header: 'ARN'},
-      state: {header: 'State'}
+      state: {header: 'State'},
     })
   }
 
   /**
    * Run Tuning CLI Option
-   * 
+   *
    * Asks the user which functions to tune and processes
    * the selected functions with the help tuning of our
    * tuning algorithm.
@@ -79,7 +79,7 @@ class LambdaPerformanceTuner extends Command {
 
     // Ask user to select functions
     Cli.flush()
-    const functionSelection: Answers = await this.promptFunctionSelection(functions);
+    const functionSelection: Answers = await this.promptFunctionSelection(functions)
 
     // Ask user for event test data for each function
     const functionEvents: FunctionEvent[] = await Promise.all(
@@ -141,7 +141,7 @@ class LambdaPerformanceTuner extends Command {
       message: 'Do you want to load a file or open your default editor for a one-off event input?',
       choices: [
         {name: 'Load a file', value: 'input'},
-        {name: 'Open default editor', value: 'editor'}
+        {name: 'Open default editor', value: 'editor'},
       ],
       default: 0,
     })
@@ -153,19 +153,19 @@ class LambdaPerformanceTuner extends Command {
     const input: Answers = await Inquirer.prompt({
       type: 'input',
       name: 'path',
-      message: `Please select a JSON file for ${func.functionName}`
+      message: `Please select a JSON file for ${func.functionName}`,
     })
 
     // Load from path
 
-    return {"key1": "value"}
+    return {key: 'value'}
   }
 
   async promptFunctionEventEditor(func: FunctionInformation): Promise<any> {
     const input: Answers = await Inquirer.prompt({
       type: 'editor',
       name: 'json',
-      message: `Please enter a valid JSON string for ${func.functionName}`
+      message: `Please enter a valid JSON string for ${func.functionName}`,
     })
 
     try {
@@ -178,7 +178,7 @@ class LambdaPerformanceTuner extends Command {
 
   /**
    * List Lambda Functions
-   * 
+   *
    * Uses AWS Lambda Service to retrieve the current user's
    * Lambda functions and returns their relevant information
    * we use to display to the user in the CLI.
@@ -232,7 +232,7 @@ class LambdaPerformanceTuner extends Command {
   awsSetup(profile: string, region: (string | undefined)): void {
     const credentials = iniLoader.loadFrom({})
     const config = iniLoader.loadFrom({isConfig: true})
-    const ini = Object.assign({}, credentials[profile], config[profile]);
+    const ini = Object.assign({}, credentials[profile], config[profile])
 
     // Configure Lambda Service
     this.lambda = new AWS.Lambda({
@@ -247,15 +247,11 @@ class LambdaPerformanceTuner extends Command {
 
   /**
    * Custom Error Handler
-   * 
+   *
    * Display a nicer error than the default oclif error at `this.error`.
    *
    * @param {(string | Error)} input
-   * @param {{
-   *       code?: string;
-   *       exit?: number;
-   *   }} [options]
-   * @returns {never}
+   * @param {{}} [options]
    * @memberof LambdaPerformanceTuner
    */
   customError(input: string | Error, options?: {
@@ -267,13 +263,13 @@ class LambdaPerformanceTuner extends Command {
     const code = options?.code ? ` {bgRed.white ${options.code}}` : ''
 
     Cli.log(Chalk`{red.bold ${name}${code}:} {red ${message}}`)
-    Cli.exit(options?.exit);
+    Cli.exit(options?.exit)
   }
 
   /**
    * Get a Chalk color for memory size
    *
-   * @param {number} size
+   * @param {number} size Lambda memorySize
    * @returns {string}
    * @memberof LambdaPerformanceTuner
    */
