@@ -1,4 +1,4 @@
 export default interface FunctionEvent {
   functionArn: string;
-  data?: {};
+  data?: Record<string, any>;
 }
